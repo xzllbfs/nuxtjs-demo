@@ -128,18 +128,439 @@
 
 ## 使用
 
-### 1. 直接初始化
+## 使用方式
 
-- 运行create-nuxt-app
+1. 直接初始化
 
-- 从头开始新建项目
+   - 方式1：运行create-nuxt-app
 
+   - 方式2：从头开始新建项目
+
+     在 package.json 文件的 scripts 中新增：
+
+      ```json
+     "scripts": {
+       "dev": "nuxt"
+     }
+      ```
+
+      运行命令
+
+    ```shell
+      # 初始化 package.json 文件
+      npm init -y
+      
+      # 安装 nuxt
+    npm i nuxt
+      
+      # 启动项目
+      npm run dev
+    ```
+
+     假设nuxt.js目录如下
+
+     nuxtjs-demo
+     ├── .nuxt
+
+     ├── pages
+
+     │   ├── index.vue
+
+     │   ├── about.vue
+
+     │   ├── user
+     │   │   ├── index.vue
+     │── package.json
+     └── yarn.lock
+
+     那Nuxt.js 自动生成的路由配置如下：
+
+     ```json
+     [{
+       path: "/about",
+       component: _7f6a0503,
+       name: "about"
+     }, {
+       path: "/user",
+       component: _dc95c5c6,
+       name: "user"
+     }, {
+       path: "/",
+       component: _c1bc4070,
+       name: "index"
+     }]
+     ```
+
+     
+
+2. 在 Node.js 服务端项目中使用：直接把Nuxt当作中间件集成到Node Web Server 中
+
+3. 在 Vue.js 项目中使用：前提是非常熟悉Nuxt.js，然后在原有代码基础上做10%左右的代码改动
+
+## 路由
+
+### 路由导航
+
+路由导航可以通过以下几种方式创建：
+
+- a标签：会刷新页面，不推荐使用
+- router-link组件：https://router.vuejs.org/api/#router-link
+- nuxt-link组件：https://zh.nuxtjs.org/docs/2.x/features/nuxt-components/#the-nuxtlink-component
+- 编程式导航：https://router.vuejs.org/zh/guide/essentials/navigation.html
+
+```vue
+<template>
+  <div>
+    <h1>hello Nuxt.js!</h1>
+    <!-- a链接 -->
+    <h1>a链接</h1>
+    <a href="/about">关于</a>
+
+    <!-- 导航链接 -->
+    <h1>导航链接</h1>
+    <router-link to="about">关于</router-link>
+    <nuxt-link to="about">关于</nuxt-link>
   
+    <!-- 编程式导航 -->
+    <h1>编程式导航</h1>
+    <button @click="onClick">关于</button>
+  </div>
+</template>
 
-### 2. 在 Node.js 服务端项目中使用
+<script>
+export default {
+  name: 'Home',
+  methods: {
+    onClick () {
+      this.$router.push('/about')
+    }
+  }
+}
+</script>
+```
 
-直接把Nuxt当作中间件集成到Node Web Server 中
+### 动态路由
 
-### 3. 在 Vue.js 项目中使用
+在 Nuxt.js 里面定义带参数的动态路由，需要创建对应的**以下划线作为前缀**的 Vue 文件 或 目录。
 
-前提是非常熟悉Nuxt.js，然后在原有代码基础上做10%左右的代码改动
+pages/ 
+--| _slug/ 
+-----| comments.vue 
+-----| index.vue 
+--| users/ 
+-----| _id.vue 
+--| index.vue 
+
+users-id 的路由路径带有 :id? 参数，表示该路由是可选的。如果你想将它设置为必选的路由，需要在 users/_id 目录内创建一个 index.vue 文件。
+
+```vue
+<template>
+  <div>
+    <h1>动态路由 user/:id?</h1>
+    路由参数：{{ $route.params.id }}
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'userPage'
+}
+</script>
+```
+
+### 嵌套路由
+
+你可以通过 vue-router 的子路由创建 Nuxt.js 应用的嵌套路由。
+
+创建内嵌子路由，你需要添加一个 Vue 文件，同时添加一个**与该文件同名**的目录用来存放子视图组件。
+
+> **Warning:** 别忘了在父组件( .vue 文件) 内增加 **<nuxt-child/>** 用于显示子视图内容。
+
+├── pages
+│   ├── index.vue
+│   ├── users.vue
+│   ├── user
+│   │   ├── index.vue
+│   │   ├── foo.vue
+
+users.vuw
+
+```vue
+<template>
+  <div>
+    <h1>父路由</h1>
+    <nuxt-child/>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'userPage'
+}
+</script>
+```
+
+### 自定义路由配置
+
+https://zh.nuxtjs.org/docs/2.x/configuration-glossary/configuration-router/
+
+nuxt.config.js
+
+```js
+module.exports = {
+  router: {
+    // 根路径
+    base: '/app/',
+    // routes：数组，路由配置表
+    // resolve：解析路由组件路径
+    extendRoutes(routes, resolve) {
+      routes.push({
+        name: 'custom',
+        path: '*',
+        component: resolve(__dirname, 'pages/404.vue')
+      })
+    }
+  }
+}
+```
+
+## 视图
+
+https://zh.nuxtjs.org/docs/2.x/concepts/views/
+
+![Composition of a View in Nuxt.js](https://zh.nuxtjs.org/docs/2.x/views.png)
+
+### Document 模板
+
+https://zh.nuxtjs.org/docs/2.x/concepts/views/#document-apphtml
+
+在根目录下创建app.html，即可修改单页面构成模板
+
+app.html
+
+```html
+<!DOCTYPE html>
+<html {{ HTML_ATTRS }}>
+  <head {{ HEAD_ATTRS }}>
+    {{ HEAD }}
+  </head>
+  <body {{ BODY_ATTRS }}>
+    <!-- 渲染的内容最终会注入到这里 -->
+    <h1>app.html</h1>
+    {{ APP }}
+  </body>
+</html>
+```
+
+### layout 布局
+
+https://zh.nuxtjs.org/docs/2.x/concepts/views#layouts
+
+创建 **layouts** 文件夹，创建默认的布局组件default.vue。注意default一旦创建，所有的子页面都会继承布局视图，除非在子页面中指定布局组件的名称。
+
+default.vue
+
+```vue
+<template>
+  <div>
+    <h1>Layout - layouts/default.vue 组件</h1>
+    <!-- 页面出口，类似于子路由出口 -->
+    <nuxt />
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'Layout'
+}
+</script>
+```
+
+index.vue
+
+```vue
+<template>
+  <div>
+    <h1>hello Nuxt.js!</h1>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'Home',
+  // default 为布局组件的默认的名称，可以忽略不写
+  layout: 'default',
+  methods: {
+    onClick () {
+      this.$router.push('/about')
+    }
+  }
+}
+</script>
+```
+
+about.vue
+
+```vue
+<template>
+  <div>
+    <h1>About</h1>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'About',
+  // about 为 layouts/about.vue文件
+  layout: 'about'
+}
+</script>
+```
+
+## 异步数据
+
+### asyncData
+
+Nuxt.js 扩展了 Vue.js，增加了一个叫* asyncData *的方法，使得我们可以在设置组件的数据之前能异步获取或处理数据。
+
+- 官网文档：https://zh.nuxtjs.org/docs/2.x/features/data-fetching#async-data
+- 基本用法：将 asyncData 返回的数据融合组件 data 方法返回数据一并给组件
+- 调用时机：服务端渲染期间、客户端路由更新之前
+- 注意事项
+  - 只能在页面组件（pages文件夹下的组件）中使用；如果想使用，使用父子组件传值的方式
+  - 没有this，因为它是在组件初始化之前被调用的
+
+about.vue
+
+```vue
+<template>
+  <div>
+    <h1>About</h1>
+    <nuxt-link to="/">首页</nuxt-link>
+    <br>
+    {{ message + title }}
+    <ul>
+      <li v-for="(item, index) in posts" :key="index">{{ item.desc }}</li>
+    </ul>
+  </div>
+</template>
+
+<script>
+import axios from 'axios'
+export default {
+  name: 'About',
+  // 返回的数据会合并到data中，在服务端先触发，在客户端路由切换后也会触发
+  // 当你想要动态页面内容有利于 SEO 或者提升首屏渲染速度的时候使用
+  async asyncData () {
+    const res = await axios({
+      method: 'GET',
+      url: 'http://localhost:3000/app/data.json'
+    })
+    return res.data
+  },
+  // 如果是非异步数据或普通数据，正常初始化到data中
+  data () {
+    return {
+      message: 'Hello-'
+    }
+  }
+}
+</script>
+```
+
+### 上下文对象
+
+https://zh.nuxtjs.org/docs/2.x/internals-glossary/context/
+
+context：asyncData 的回调参数
+
+示例：动态路由跳转传参，可以通过context.params获取路由参数
+
+about.vue
+
+```vue
+<template>
+  <div>
+    <h1>About</h1>
+    <nuxt-link to="/">首页</nuxt-link>
+    <br>
+    {{ message + title }}
+    <ul>
+      <li v-for="(item, index) in posts" :key="index">
+        <nuxt-link :to="`/article/${item.id}`">
+        {{ item.desc }}
+        </nuxt-link>
+      </li>
+    </ul>
+  </div>
+</template>
+
+<script>
+import axios from 'axios'
+export default {
+  name: 'About',
+  async asyncData () {
+    const res = await axios({
+      method: 'GET',
+      url: 'http://localhost:3000/app/data.json'
+    })
+    return res.data
+  },
+  data () {
+    return {
+      message: 'Hello-'
+    }
+  }
+}
+</script>
+```
+
+article/_id.vue
+
+```vue
+<template>
+  <div>
+    <h1>文章标题</h1>
+
+    文章内容：{{ article.desc }}
+  </div>
+</template>
+
+<script>
+import axios from 'axios'
+export default {
+  name: 'userPage',
+  async asyncData (context) {
+    const { data } = await axios({
+      method: 'GET',
+      url: 'http://localhost:3000/app/data.json'
+    })
+    const id = Number.parseInt(context.params.id)
+    return {
+      article: data.posts.find(item => item.id === id)
+    }
+  }
+}
+</script>
+```
+
+## 生命周期
+
+| **钩子函数**  | **说明**                                                     | **Server** | **Client** |
+| ------------- | ------------------------------------------------------------ | ---------- | ---------- |
+| beforeCreate  | 在实例创建之前被调用，此时还拿不到数据和 DOM                 | ✔          | ✔          |
+| created       | 在实例创建完成后被调用，此时可以操作数据了                   | ✔          | ✔          |
+| beforeMount   | 在挂载开始之前被调用：相关的 render 函数首次被调用           | ❌          | ✔          |
+| mounted       | 实例被挂载后调用，此时可以执行一些初始 DOM 操作              | ❌          | ✔          |
+| beforeUpdate  | 数据更新时调用，发生在虚拟 DOM 打补丁之前。<br />这里适合在更新之前访问现有的 DOM，比如手动移除已添加的事件监听器。 | ❌          | ✔          |
+| updated       | 由于数据更改导致的虚拟 DOM 重新渲染和打补丁，在这之后会调用该钩子。当这个钩子被调用时，组件DOM 已经更新，所以你现在可以执行依赖于 DOM 的操作。 | ❌          | ✔          |
+| activated     | 被 keep-alive 缓存的组件激活时调用。                         | ❌          | ✔          |
+| deactivated   | 被 keep-alive 缓存的组件停用时调用。                         | ❌          | ✔          |
+| beforeDestroy | 实例销毁之前调用。在这一步，实例仍然完全可用                 | ❌          | ✔          |
+| destroyed     | 实例销毁后调用。该钩子被调用后，对应 Vue 实例的所有指令都被解绑，所有的事件监听器被移除，所有的子实例也都被销毁。 | ❌          | ✔          |
+| errorCaptured | 当捕获一个来自子孙组件的错误时被调用。                       | ✔          | ✔          |
+
+## 渲染流程
+
+![img](https://zh.nuxtjs.org/nuxt-schema.svg)
+
